@@ -3,15 +3,15 @@ const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'VitalityCenter',
-  password: 'root', // cambia por tu contraseña real
-  port: 5432,
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:root@localhost:5432/VitalityCenter',
+  ssl: process.env.DATABASE_URL
+    ? { rejectUnauthorized: false }
+    : false
 });
 
 // Probar conexión
@@ -35,21 +35,12 @@ app.get('/api/membresias', async (req, res) => {
     `);
     res.json(result.rows);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Error al obtener membresías' });
   }
 });
 
-// Registrar cliente + membresía en una sola operación
 app.post('/api/registro-completo', async (req, res) => {
-  const {
-    nombre,
-    telefono,
-    correo,
-    id_membresia,
-    fecha_inicio
-  } = req.body;
-
+  const { nombre, telefono, correo, id_membresia, fecha_inicio } = req.body;
   const client = await pool.connect();
 
   try {
@@ -100,7 +91,6 @@ app.post('/api/registro-completo', async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error(error);
     res.status(500).json({
       error: 'Error al registrar cliente con membresía',
       detalle: error.message
@@ -110,7 +100,6 @@ app.post('/api/registro-completo', async (req, res) => {
   }
 });
 
-// Buscar clientes por nombre o correo
 app.get('/api/buscar-clientes', async (req, res) => {
   const texto = req.query.texto || '';
 
@@ -136,12 +125,10 @@ app.get('/api/buscar-clientes', async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Error al buscar clientes' });
   }
 });
 
-// Ver todos los clientes con membresía
 app.get('/api/clientes', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -161,11 +148,12 @@ app.get('/api/clientes', async (req, res) => {
     `);
     res.json(result.rows);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Error al obtener clientes' });
   }
 });
 
-app.listen(3000, () => {
-  console.log('Servidor en http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor en puerto ${PORT}`);
 });

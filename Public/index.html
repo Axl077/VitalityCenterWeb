@@ -5,47 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vitality Center</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f3f6fb;
+      background: #f4f7fb;
       color: #1f2937;
     }
-
     header {
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: white;
       padding: 24px;
       text-align: center;
     }
-
     .container {
-      width: 95%;
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 24px auto;
+      padding: 0 16px;
     }
-
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-
     .card {
       background: white;
       border-radius: 16px;
       padding: 20px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
-
-    .card h2 {
-      margin-top: 0;
-    }
-
+    h2 { margin-top: 0; }
     input, select, button {
       width: 100%;
       padding: 12px;
@@ -54,7 +43,6 @@
       border: 1px solid #d1d5db;
       font-size: 14px;
     }
-
     button {
       border: none;
       background: #2563eb;
@@ -62,80 +50,69 @@
       font-weight: bold;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
+    button:hover { background: #1d4ed8; }
     .status {
       margin-top: 12px;
       padding: 12px;
       border-radius: 10px;
       font-size: 14px;
     }
-
     .ok {
       background: #dcfce7;
       color: #166534;
     }
-
     .error {
       background: #fee2e2;
       color: #991b1b;
     }
-
     .full {
       margin-top: 20px;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 14px;
       background: white;
     }
-
     th, td {
       padding: 12px;
       border-bottom: 1px solid #e5e7eb;
       text-align: left;
       font-size: 14px;
     }
-
     th {
       background: #eaf1ff;
       color: #1e3a8a;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Vitality Center</h1>
-    <p>Registro y búsqueda de clientes con membresía</p>
+    <p>Sistema de gestión de gimnasio</p>
   </header>
 
   <div class="container">
     <div class="grid">
       <div class="card">
         <h2>Registrar cliente con membresía</h2>
-
         <input type="text" id="nombre" placeholder="Nombre completo">
         <input type="text" id="telefono" placeholder="Teléfono">
         <input type="email" id="correo" placeholder="Correo">
         <select id="id_membresia"></select>
         <input type="date" id="fecha_inicio">
-
         <button onclick="registrarCompleto()">Guardar registro</button>
         <div id="registroStatus"></div>
       </div>
 
       <div class="card">
         <h2>Buscar clientes</h2>
-
         <input type="text" id="buscarTexto" placeholder="Buscar por nombre o correo">
         <button onclick="buscarClientes()">Buscar</button>
         <button onclick="cargarClientes()">Mostrar todos</button>
-
         <div id="buscarStatus"></div>
       </div>
     </div>
@@ -153,23 +130,19 @@
     }
 
     async function cargarMembresias() {
-      try {
-        const res = await fetch('/api/membresias');
-        const data = await res.json();
+      const res = await fetch('/api/membresias');
+      const data = await res.json();
 
-        const select = document.getElementById('id_membresia');
-        select.innerHTML = '<option value="">Selecciona una membresía</option>';
+      const select = document.getElementById('id_membresia');
+      select.innerHTML = '<option value="">Selecciona una membresía</option>';
 
-        data.forEach(m => {
-          select.innerHTML += `
-            <option value="${m.id_membresia}">
-              ${m.nombre} - ${m.duracion_dias} días
-            </option>
-          `;
-        });
-      } catch (error) {
-        mostrarEstado('registroStatus', 'No se pudieron cargar las membresías', 'error');
-      }
+      data.forEach(m => {
+        select.innerHTML += `
+          <option value="${m.id_membresia}">
+            ${m.nombre} - ${m.duracion_dias} días
+          </option>
+        `;
+      });
     }
 
     async function registrarCompleto() {
@@ -179,67 +152,48 @@
       const id_membresia = document.getElementById('id_membresia').value;
       const fecha_inicio = document.getElementById('fecha_inicio').value;
 
-      try {
-        const res = await fetch('/api/registro-completo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre,
-            telefono,
-            correo,
-            id_membresia,
-            fecha_inicio
-          })
-        });
+      const res = await fetch('/api/registro-completo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, telefono, correo, id_membresia, fecha_inicio })
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok) {
-          mostrarEstado('registroStatus', data.detalle || data.error || 'Error al registrar', 'error');
-          return;
-        }
-
-        mostrarEstado('registroStatus', data.mensaje, 'ok');
-
-        document.getElementById('nombre').value = '';
-        document.getElementById('telefono').value = '';
-        document.getElementById('correo').value = '';
-        document.getElementById('id_membresia').value = '';
-        document.getElementById('fecha_inicio').value = '';
-
-        cargarClientes();
-      } catch (error) {
-        mostrarEstado('registroStatus', 'Error del servidor', 'error');
+      if (!res.ok) {
+        mostrarEstado('registroStatus', data.detalle || data.error || 'Error al registrar', 'error');
+        return;
       }
+
+      mostrarEstado('registroStatus', data.mensaje, 'ok');
+
+      document.getElementById('nombre').value = '';
+      document.getElementById('telefono').value = '';
+      document.getElementById('correo').value = '';
+      document.getElementById('id_membresia').value = '';
+      document.getElementById('fecha_inicio').value = '';
+
+      cargarClientes();
     }
 
     async function buscarClientes() {
       const texto = document.getElementById('buscarTexto').value;
+      const res = await fetch('/api/buscar-clientes?texto=' + encodeURIComponent(texto));
+      const data = await res.json();
 
-      try {
-        const res = await fetch('/api/buscar-clientes?texto=' + encodeURIComponent(texto));
-        const data = await res.json();
+      renderTabla(data);
 
-        renderTabla(data);
-
-        if (data.length === 0) {
-          mostrarEstado('buscarStatus', 'No se encontraron resultados', 'error');
-        } else {
-          mostrarEstado('buscarStatus', 'Búsqueda completada', 'ok');
-        }
-      } catch (error) {
-        mostrarEstado('buscarStatus', 'Error al buscar clientes', 'error');
+      if (data.length === 0) {
+        mostrarEstado('buscarStatus', 'No se encontraron resultados', 'error');
+      } else {
+        mostrarEstado('buscarStatus', 'Búsqueda completada', 'ok');
       }
     }
 
     async function cargarClientes() {
-      try {
-        const res = await fetch('/api/clientes');
-        const data = await res.json();
-        renderTabla(data);
-      } catch (error) {
-        document.getElementById('tablaClientes').innerHTML = 'Error al cargar clientes';
-      }
+      const res = await fetch('/api/clientes');
+      const data = await res.json();
+      renderTabla(data);
     }
 
     function renderTabla(data) {
@@ -272,7 +226,7 @@
         `;
       });
 
-      html += `</table>`;
+      html += '</table>';
       document.getElementById('tablaClientes').innerHTML = html;
     }
 
