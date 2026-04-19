@@ -1,227 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administración - Vitality Center</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #111827;
-      color: white;
-    }
-    header {
-      background: #1f2937;
-      padding: 20px;
-      text-align: center;
-      border-bottom: 2px solid #3b82f6;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 20px;
-    }
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-    }
-    button {
-      background: #3b82f6;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2563eb;
-    }
-    .danger {
-      background: #ef4444;
-    }
-    .danger:hover {
-      background: #dc2626;
-    }
-    .success {
-      background: #22c55e;
-    }
-    .success:hover {
-      background: #16a34a;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #0f172a;
-    }
-    th, td {
-      border: 1px solid #334155;
-      padding: 10px;
-      text-align: left;
-      font-size: 14px;
-    }
-    th {
-      background: #2563eb;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 15px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Admin</title>
+
+<style>
+body{
+  background:#111827;
+  color:white;
+  font-family:sans-serif;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+.card{
+  background:#1e293b;
+  padding:20px;
+  margin:20px;
+  border-radius:10px;
+}
+
+input,select,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button{cursor:pointer;}
+.green{background:#22c55e;}
+.red{background:#ef4444;}
+.blue{background:#3b82f6;}
+
+</style>
 </head>
+
 <body>
-  <header>
-    <h1>Panel de Administración</h1>
-    <button onclick="window.location.href='/'" style="max-width:220px;">Volver al inicio</button>
-  </header>
 
-  <div class="container">
-    <div class="card">
-      <h2>Agregar suscripción a cliente existente</h2>
-      <div class="row">
-        <input type="number" id="id_cliente" placeholder="ID cliente">
-        <select id="id_membresia"></select>
-        <input type="date" id="fecha_inicio">
-      </div>
-      <button class="success" onclick="agregarSuscripcion()">Agregar suscripción</button>
-      <div id="adminStatus"></div>
-    </div>
+<div class="container">
 
-    <div class="card">
-      <h2>Cancelar suscripción</h2>
-      <input type="number" id="cancelarId" placeholder="ID cliente_membresia">
-      <button class="danger" onclick="cancelarSuscripcion()">Cancelar</button>
-    </div>
+<div class="card">
+<h2>Login</h2>
+<input id="user" placeholder="usuario">
+<input id="pass" type="password" placeholder="password">
+<button class="blue" onclick="login()">Entrar</button>
+</div>
 
-    <div class="card">
-      <h2>Reactivar suscripción</h2>
-      <input type="number" id="reactivarId" placeholder="ID cliente_membresia">
-      <button onclick="reactivarSuscripcion()">Reactivar</button>
-    </div>
+<div id="panel" style="display:none">
 
-    <div class="card">
-      <h2>Listado general</h2>
-      <button onclick="cargarClientes()">Actualizar listado</button>
-      <div id="tablaClientes"></div>
-    </div>
-  </div>
+<div class="card">
+<h2>Registrar cliente</h2>
 
-  <script>
-    async function revisarSesion() {
-      const res = await fetch('/api/session');
-      const data = await res.json();
+<input id="nombre" placeholder="nombre">
+<input id="tel" placeholder="telefono">
+<input id="correo" placeholder="correo">
+<select id="mem"></select>
+<input id="fecha" type="date">
 
-      if (!data.authenticated) {
-        alert('Debes iniciar sesión primero');
-        window.location.href = '/';
-      }
-    }
+<button class="green" onclick="registrar()">Registrar</button>
+</div>
 
-    async function cargarMembresias() {
-      const res = await fetch('/api/membresias');
-      const data = await res.json();
+<div class="card">
+<h2>Cancelar</h2>
+<input id="cid">
+<button class="red" onclick="cancelar()">Cancelar</button>
+</div>
 
-      const select = document.getElementById('id_membresia');
-      select.innerHTML = '<option value="">Selecciona una membresía</option>';
+<div class="card">
+<h2>Reactivar</h2>
+<input id="rid">
+<button class="blue" onclick="reactivar()">Reactivar</button>
+</div>
 
-      data.forEach(m => {
-        select.innerHTML += `
-          <option value="${m.id_membresia}">
-            ${m.nombre} - ${m.duracion_dias} días
-          </option>
-        `;
-      });
-    }
+<div class="card">
+<button onclick="listar()">Actualizar listado</button>
+<div id="tabla"></div>
+</div>
 
-    async function agregarSuscripcion() {
-      const id_cliente = document.getElementById('id_cliente').value;
-      const id_membresia = document.getElementById('id_membresia').value;
-      const fecha_inicio = document.getElementById('fecha_inicio').value;
+</div>
 
-      const res = await fetch('/api/suscripciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_cliente, id_membresia, fecha_inicio })
-      });
+</div>
 
-      const data = await res.json();
-      document.getElementById('adminStatus').innerText = data.message || data.error || '';
-      cargarClientes();
-    }
+<script>
 
-    async function cancelarSuscripcion() {
-      const id = document.getElementById('cancelarId').value;
+async function login(){
+  const r=await fetch('/login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      user:user.value,
+      pass:pass.value
+    })
+  });
 
-      const res = await fetch('/api/suscripciones/' + id + '/cancelar', {
-        method: 'PUT'
-      });
+  if(r.ok){
+    panel.style.display='block';
+    cargarMem();
+  }
+}
 
-      const data = await res.json();
-      alert(data.message || data.error);
-      cargarClientes();
-    }
+async function cargarMem(){
+  const r=await fetch('/membresias');
+  const d=await r.json();
 
-    async function reactivarSuscripcion() {
-      const id = document.getElementById('reactivarId').value;
+  mem.innerHTML='';
+  d.forEach(m=>{
+    mem.innerHTML+=`<option value="${m.id_membresia}">
+      ${m.nombre}
+    </option>`;
+  });
+}
 
-      const res = await fetch('/api/suscripciones/' + id + '/reactivar', {
-        method: 'PUT'
-      });
+async function registrar(){
+  await fetch('/admin/registro',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      nombre:nombre.value,
+      telefono:tel.value,
+      correo:correo.value,
+      id_membresia:mem.value,
+      fecha_inicio:fecha.value
+    })
+  });
+  alert('Guardado');
+}
 
-      const data = await res.json();
-      alert(data.message || data.error);
-      cargarClientes();
-    }
+async function cancelar(){
+  await fetch('/admin/cancelar/'+cid.value,{method:'PUT'});
+  alert('Cancelado');
+}
 
-    async function cargarClientes() {
-      const res = await fetch('/api/clientes');
-      const data = await res.json();
+async function reactivar(){
+  await fetch('/admin/reactivar/'+rid.value,{method:'PUT'});
+  alert('Reactivado');
+}
 
-      let html = `
-        <table>
-          <tr>
-            <th>ID Cliente</th>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>ID Suscripción</th>
-            <th>Membresía</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Estado</th>
-          </tr>
-      `;
+async function listar(){
+  const r=await fetch('/clientes');
+  const d=await r.json();
 
-      data.forEach(c => {
-        html += `
-          <tr>
-            <td>${c.id_cliente ?? ''}</td>
-            <td>${c.nombre ?? ''}</td>
-            <td>${c.correo ?? ''}</td>
-            <td>${c.id_cliente_membresia ?? ''}</td>
-            <td>${c.membresia ?? ''}</td>
-            <td>${c.fecha_inicio ?? ''}</td>
-            <td>${c.fecha_fin ?? ''}</td>
-            <td>${c.estado ?? ''}</td>
-          </tr>
-        `;
-      });
+  let html='<table border=1>';
+  d.forEach(x=>{
+    html+=`<tr>
+      <td>${x.nombre}</td>
+      <td>${x.membresia}</td>
+      <td>${x.estado}</td>
+    </tr>`;
+  });
 
-      html += `</table>`;
-      document.getElementById('tablaClientes').innerHTML = html;
-    }
+  tabla.innerHTML=html;
+}
 
-    revisarSesion();
-    cargarMembresias();
-    cargarClientes();
-  </script>
+</script>
+
 </body>
 </html>

@@ -1,299 +1,72 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vitality Center</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-    }
-    header {
-      background: #111827;
-      padding: 20px;
-      text-align: center;
-      border-bottom: 2px solid #22c55e;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 20px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .card {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,.25);
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
-    }
-    button {
-      background: #22c55e;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover { background: #16a34a; }
-    .danger { background: #ef4444; }
-    .danger:hover { background: #dc2626; }
-    .secondary { background: #3b82f6; }
-    .secondary:hover { background: #2563eb; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #0f172a;
-    }
-    th, td {
-      border: 1px solid #334155;
-      padding: 10px;
-      text-align: left;
-      font-size: 14px;
-    }
-    th {
-      background: #1d4ed8;
-    }
-    .hidden { display: none; }
-    .status {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      background: #334155;
-    }
-    .top-actions {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Vitality Center</title>
+
+<style>
+body{
+  background:#0f172a;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+.card{
+  background:#1e293b;
+  padding:20px;
+  margin:20px auto;
+  border-radius:10px;
+  max-width:500px;
+}
+
+input,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button{
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.red{background:#ef4444;}
+.blue{background:#3b82f6;}
+
+</style>
 </head>
+
 <body>
-  <header>
-    <h1>Vitality Center 💪</h1>
-    <p>Sistema principal</p>
-  </header>
 
-  <div class="container">
-    <div id="loginSection" class="card">
-      <h2>Login administrador</h2>
-      <input type="text" id="username" placeholder="Usuario">
-      <input type="password" id="password" placeholder="Contraseña">
-      <button onclick="login()">Iniciar sesión</button>
-      <div id="loginStatus" class="status"></div>
-    </div>
+<h1>Vitality Center 💪</h1>
 
-    <div id="appSection" class="hidden">
-      <div class="top-actions">
-        <button class="secondary" onclick="window.location.href='/admin'">Ir a administración</button>
-        <button class="danger" onclick="logout()">Cerrar sesión</button>
-      </div>
+<div class="card">
+<h2>Cancelar suscripción</h2>
 
-      <div class="grid">
-        <div class="card">
-          <h2>Registrar cliente con suscripción</h2>
-          <input type="text" id="nombre" placeholder="Nombre completo">
-          <input type="text" id="telefono" placeholder="Teléfono">
-          <input type="email" id="correo" placeholder="Correo">
-          <select id="id_membresia"></select>
-          <input type="date" id="fecha_inicio">
-          <button onclick="registrarCliente()">Guardar cliente</button>
-          <div id="registroStatus" class="status"></div>
-        </div>
+<input id="id" placeholder="ID suscripción">
+<button class="red" onclick="cancelar()">Cancelar</button>
 
-        <div class="card">
-          <h2>Buscar clientes</h2>
-          <input type="text" id="buscarTexto" placeholder="Buscar por nombre o correo">
-          <button onclick="buscarClientes()">Buscar</button>
-          <button class="secondary" onclick="cargarClientes()">Mostrar todos</button>
-          <div id="buscarStatus" class="status"></div>
-        </div>
-      </div>
+<p id="msg"></p>
+</div>
 
-      <div class="card" style="margin-top:20px;">
-        <h2>Clientes y suscripciones</h2>
-        <div id="tablaClientes"></div>
-      </div>
+<button class="blue" onclick="location.href='admin.html'">
+Administración
+</button>
 
-      <div class="card" style="margin-top:20px;">
-        <h2>Cancelación por cliente</h2>
-        <p>Aquí se simula que un cliente solicita cancelar su suscripción.</p>
-        <input type="number" id="cancelarClienteSuscripcionId" placeholder="ID de cliente_membresia">
-        <button class="danger" onclick="cancelarComoCliente()">Cancelar suscripción</button>
-        <div id="cancelarClienteStatus" class="status"></div>
-      </div>
-    </div>
-  </div>
+<script>
+async function cancelar(){
+  const id=document.getElementById('id').value;
 
-  <script>
-    function setStatus(id, text) {
-      document.getElementById(id).innerText = text;
-    }
+  const r=await fetch('/cancelar/'+id,{method:'PUT'});
 
-    async function revisarSesion() {
-      const res = await fetch('/api/session');
-      const data = await res.json();
+  document.getElementById('msg').innerText='Cancelado';
+}
+</script>
 
-      if (data.authenticated) {
-        document.getElementById('loginSection').classList.add('hidden');
-        document.getElementById('appSection').classList.remove('hidden');
-        cargarMembresias();
-        cargarClientes();
-      } else {
-        document.getElementById('loginSection').classList.remove('hidden');
-        document.getElementById('appSection').classList.add('hidden');
-      }
-    }
-
-    async function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setStatus('loginStatus', data.error || 'Error de login');
-        return;
-      }
-
-      setStatus('loginStatus', data.message);
-      revisarSesion();
-    }
-
-    async function logout() {
-      await fetch('/api/logout', { method: 'POST' });
-      revisarSesion();
-    }
-
-    async function cargarMembresias() {
-      const res = await fetch('/api/membresias');
-      const data = await res.json();
-
-      const select = document.getElementById('id_membresia');
-      select.innerHTML = '<option value="">Selecciona una membresía</option>';
-
-      data.forEach(m => {
-        select.innerHTML += `
-          <option value="${m.id_membresia}">
-            ${m.nombre} - ${m.duracion_dias} días
-          </option>
-        `;
-      });
-    }
-
-    async function registrarCliente() {
-      const nombre = document.getElementById('nombre').value;
-      const telefono = document.getElementById('telefono').value;
-      const correo = document.getElementById('correo').value;
-      const id_membresia = document.getElementById('id_membresia').value;
-      const fecha_inicio = document.getElementById('fecha_inicio').value;
-
-      const res = await fetch('/api/clientes/registro-completo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, correo, id_membresia, fecha_inicio })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setStatus('registroStatus', data.detalle || data.error || 'Error');
-        return;
-      }
-
-      setStatus('registroStatus', data.message);
-      cargarClientes();
-    }
-
-    async function buscarClientes() {
-      const texto = document.getElementById('buscarTexto').value;
-      const res = await fetch('/api/clientes/buscar?texto=' + encodeURIComponent(texto));
-      const data = await res.json();
-      renderTabla(data);
-      setStatus('buscarStatus', 'Búsqueda completada');
-    }
-
-    async function cargarClientes() {
-      const res = await fetch('/api/clientes');
-      const data = await res.json();
-      renderTabla(data);
-    }
-
-    function renderTabla(data) {
-      let html = `
-        <table>
-          <tr>
-            <th>ID Cliente</th>
-            <th>Nombre</th>
-            <th>Teléfono</th>
-            <th>Correo</th>
-            <th>ID Suscripción</th>
-            <th>Membresía</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Estado</th>
-          </tr>
-      `;
-
-      data.forEach(c => {
-        html += `
-          <tr>
-            <td>${c.id_cliente ?? ''}</td>
-            <td>${c.nombre ?? ''}</td>
-            <td>${c.telefono ?? ''}</td>
-            <td>${c.correo ?? ''}</td>
-            <td>${c.id_cliente_membresia ?? ''}</td>
-            <td>${c.membresia ?? 'Sin suscripción'}</td>
-            <td>${c.fecha_inicio ?? ''}</td>
-            <td>${c.fecha_fin ?? ''}</td>
-            <td>${c.estado ?? ''}</td>
-          </tr>
-        `;
-      });
-
-      html += `</table>`;
-      document.getElementById('tablaClientes').innerHTML = html;
-    }
-
-    async function cancelarComoCliente() {
-      const id = document.getElementById('cancelarClienteSuscripcionId').value;
-
-      const res = await fetch('/api/cliente/cancelar/' + id, {
-        method: 'PUT'
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setStatus('cancelarClienteStatus', data.error || 'Error al cancelar');
-        return;
-      }
-
-      setStatus('cancelarClienteStatus', data.message);
-      cargarClientes();
-    }
-
-    revisarSesion();
-  </script>
 </body>
 </html>
