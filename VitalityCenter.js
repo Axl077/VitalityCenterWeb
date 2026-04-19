@@ -1,129 +1,120 @@
 const express = require('express');
-const session = require('express-session');
-const { Pool } = require('pg');
 const path = require('path');
+const { Pool } = require('pg');
 
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: 'vitality-secret',
-  resave: false,
-  saveUninitialized: false
-}));
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ================= DB =================
+// conexión postgres (Railway)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// ================= AUTH =================
-const USER = 'admin';
-const PASS = 'admin123';
+// servir frontend
+app.use(express.static(path.join(__dirname, 'public')));
 
-function auth(req, res, next) {
-  if (req.session.auth) return next();
-  res.status(401).json({ error: 'No autorizado' });
-}
+// =====================
+// 🔹 CLIENTES
+// =====================
 
-// ================= LOGIN =================
-app.post('/login', (req, res) => {
-  const { user, pass } = req.body;
-
-  if (user === USER && pass === PASS) {
-    req.session.auth = true;
-    return res.json({ ok: true });
-  }
-
-  res.status(401).json({ error: 'Credenciales incorrectas' });
-});
-
-// ================= MEMBRESIAS =================
-app.get('/membresias', async (req, res) => {
-  const r = await pool.query('SELECT * FROM membresia');
-  res.json(r.rows);
-});
-
-// ================= REGISTRAR CLIENTE (ADMIN) =================
-app.post('/admin/registro', auth, async (req, res) => {
-  const { nombre, telefono, correo, id_membresia, fecha_inicio } = req.body;
+// registrar cliente
+app.post('/api/clientes', async (req, res) => {
+  const { nombre, telefono, email } = req.body;
 
   try {
-    const cliente = await pool.query(
-      `INSERT INTO cliente(nombre, telefono, correo)
-       VALUES($1,$2,$3) RETURNING *`,
-      [nombre, telefono, correo]
+    const result = await pool.query(
+      'INSERT INTO clientes(nombre, telefono, email) VALUES($1,$2,$3) RETURNING *',
+      [nombre, telefono, email]
     );
-
-    const dur = await pool.query(
-      `SELECT duracion_dias FROM membresia WHERE id_membresia=$1`,
-      [id_membresia]
-    );
-
-    const dias = dur.rows[0].duracion_dias;
-
-    await pool.query(
-      `INSERT INTO cliente_membresia
-      (id_cliente,id_membresia,fecha_inicio,fecha_fin,estado)
-      VALUES($1,$2,$3,$3 + ($4 || ' days')::interval,'activa')`,
-      [cliente.rows[0].id_cliente, id_membresia, fecha_inicio, dias]
-    );
-
-    res.json({ ok: true });
-
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error al guardar' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error creando cliente");
   }
 });
 
-// ================= LISTADO =================
-app.get('/clientes', auth, async (req, res) => {
-  const r = await pool.query(`
-    SELECT c.nombre,c.correo,
-    cm.id_cliente_membresia,m.nombre AS membresia,cm.estado
-    FROM cliente c
-    LEFT JOIN cliente_membresia cm ON c.id_cliente=cm.id_cliente
-    LEFT JOIN membresia m ON cm.id_membresia=m.id_membresia
-  `);
-  res.json(r.rows);
+// buscar cliente
+app.get('/api/clientes/:telefono', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM clientes WHERE telefono = $1',
+      [req.params.telefono]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).send("Error");
+  }
 });
 
-// ================= CANCELAR CLIENTE (PUBLICO) =================
-app.put('/cancelar/:id', async (req, res) => {
-  await pool.query(
-    `UPDATE cliente_membresia SET estado='cancelada'
-     WHERE id_cliente_membresia=$1`,
-    [req.params.id]
-  );
-  res.json({ ok: true });
+// =====================
+// 🔹 SUSCRIPCIONES
+// =====================
+
+// agregar o renovar
+app.post('/api/suscripciones', async (req, res) => {
+  const { cliente_id, tipo, fecha_fin } = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO suscripciones(cliente_id, tipo, fecha_fin, activa)
+       VALUES($1,$2,$3,true) RETURNING *`,
+      [cliente_id, tipo, fecha_fin]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error");
+  }
 });
 
-// ================= ADMIN =================
-app.put('/admin/cancelar/:id', auth, async (req, res) => {
-  await pool.query(
-    `UPDATE cliente_membresia SET estado='cancelada'
-     WHERE id_cliente_membresia=$1`,
-    [req.params.id]
-  );
-  res.json({ ok: true });
+// cancelar
+app.post('/api/cancelar', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    await pool.query(
+      'UPDATE suscripciones SET activa=false WHERE id=$1',
+      [id]
+    );
+    res.send("Cancelado");
+  } catch (err) {
+    res.status(500).send("Error");
+  }
 });
 
-app.put('/admin/reactivar/:id', auth, async (req, res) => {
-  await pool.query(
-    `UPDATE cliente_membresia SET estado='activa'
-     WHERE id_cliente_membresia=$1`,
-    [req.params.id]
-  );
-  res.json({ ok: true });
+// listar todo (ADMIN)
+app.get('/api/admin/listado', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id as cliente_id, c.nombre, c.telefono,
+             s.id as sub_id, s.tipo, s.fecha_fin, s.activa
+      FROM clientes c
+      LEFT JOIN suscripciones s ON c.id = s.cliente_id
+      ORDER BY c.id DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).send("Error");
+  }
 });
 
-// ================= SERVER =================
-app.listen(process.env.PORT || 3000, () => {
-  console.log('Servidor activo');
+// =====================
+// 🔹 LOGIN ADMIN
+// =====================
+app.post('/api/login', (req, res) => {
+  const { user, pass } = req.body;
+
+  if (user === 'admin' && pass === 'admin123') {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
+// =====================
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log("Servidor en puerto", PORT);
 });

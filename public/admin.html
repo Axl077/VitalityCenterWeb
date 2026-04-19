@@ -3,92 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin</title>
-
 <style>
-body{
-  background:#111827;
-  color:white;
-  font-family:sans-serif;
-}
-
-.container{
-  max-width:900px;
-  margin:auto;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
-  margin:20px;
-  border-radius:10px;
-}
-
-input,select,button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:8px;
-  border:none;
-}
-
-button{cursor:pointer;}
-.green{background:#22c55e;}
-.red{background:#ef4444;}
-.blue{background:#3b82f6;}
-
+body { background:#020617; color:white; font-family:Arial; text-align:center }
+table { width:90%; margin:auto; border-collapse:collapse }
+td,th { border:1px solid white; padding:10px }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<div class="card">
-<h2>Login</h2>
+<h2>Login Admin</h2>
 <input id="user" placeholder="usuario">
 <input id="pass" type="password" placeholder="password">
-<button class="blue" onclick="login()">Entrar</button>
-</div>
+<button onclick="login()">Entrar</button>
 
 <div id="panel" style="display:none">
 
-<div class="card">
-<h2>Registrar cliente</h2>
+<h2>📊 Panel</h2>
+<button onclick="cargar()">Actualizar</button>
 
-<input id="nombre" placeholder="nombre">
-<input id="tel" placeholder="telefono">
-<input id="correo" placeholder="correo">
-<select id="mem"></select>
-<input id="fecha" type="date">
-
-<button class="green" onclick="registrar()">Registrar</button>
-</div>
-
-<div class="card">
-<h2>Cancelar</h2>
-<input id="cid">
-<button class="red" onclick="cancelar()">Cancelar</button>
-</div>
-
-<div class="card">
-<h2>Reactivar</h2>
-<input id="rid">
-<button class="blue" onclick="reactivar()">Reactivar</button>
-</div>
-
-<div class="card">
-<button onclick="listar()">Actualizar listado</button>
-<div id="tabla"></div>
-</div>
-
-</div>
+<table id="tabla"></table>
 
 </div>
 
 <script>
-
 async function login(){
-  const r=await fetch('/login',{
+  let r = await fetch('/api/login',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -99,63 +39,28 @@ async function login(){
 
   if(r.ok){
     panel.style.display='block';
-    cargarMem();
+  } else {
+    alert("Error login");
   }
 }
 
-async function cargarMem(){
-  const r=await fetch('/membresias');
-  const d=await r.json();
+async function cargar(){
+  let r = await fetch('/api/admin/listado');
+  let data = await r.json();
 
-  mem.innerHTML='';
-  d.forEach(m=>{
-    mem.innerHTML+=`<option value="${m.id_membresia}">
-      ${m.nombre}
-    </option>`;
-  });
-}
+  tabla.innerHTML = "<tr><th>Cliente</th><th>Tel</th><th>Tipo</th><th>Fin</th><th>Estado</th></tr>";
 
-async function registrar(){
-  await fetch('/admin/registro',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      nombre:nombre.value,
-      telefono:tel.value,
-      correo:correo.value,
-      id_membresia:mem.value,
-      fecha_inicio:fecha.value
-    })
-  });
-  alert('Guardado');
-}
-
-async function cancelar(){
-  await fetch('/admin/cancelar/'+cid.value,{method:'PUT'});
-  alert('Cancelado');
-}
-
-async function reactivar(){
-  await fetch('/admin/reactivar/'+rid.value,{method:'PUT'});
-  alert('Reactivado');
-}
-
-async function listar(){
-  const r=await fetch('/clientes');
-  const d=await r.json();
-
-  let html='<table border=1>';
-  d.forEach(x=>{
-    html+=`<tr>
+  data.forEach(x=>{
+    tabla.innerHTML += `
+    <tr>
       <td>${x.nombre}</td>
-      <td>${x.membresia}</td>
-      <td>${x.estado}</td>
+      <td>${x.telefono}</td>
+      <td>${x.tipo || ''}</td>
+      <td>${x.fecha_fin || ''}</td>
+      <td>${x.activa ? 'Activa':'Cancelada'}</td>
     </tr>`;
   });
-
-  tabla.innerHTML=html;
 }
-
 </script>
 
 </body>

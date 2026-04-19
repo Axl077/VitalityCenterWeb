@@ -3,41 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <title>Vitality Center</title>
-
 <style>
-body{
-  background:#0f172a;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
-  margin:20px auto;
-  border-radius:10px;
-  max-width:500px;
-}
-
-input,button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:8px;
-  border:none;
-}
-
-button{
-  background:#22c55e;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.red{background:#ef4444;}
-.blue{background:#3b82f6;}
-
+body { font-family: Arial; background:#0f172a; color:white; text-align:center }
+.container { width: 400px; margin:auto }
+input, select, button { width:100%; margin:5px; padding:10px }
+button { background:#22c55e; color:white; border:none }
+.admin-btn { background:#3b82f6 }
 </style>
 </head>
 
@@ -45,26 +16,79 @@ button{
 
 <h1>Vitality Center 💪</h1>
 
-<div class="card">
-<h2>Cancelar suscripción</h2>
+<div class="container">
 
-<input id="id" placeholder="ID suscripción">
-<button class="red" onclick="cancelar()">Cancelar</button>
+<h3>🔍 Buscar cliente</h3>
+<input id="telefono" placeholder="Teléfono">
+<button onclick="buscar()">Buscar</button>
 
-<p id="msg"></p>
-</div>
+<h3>🆕 Registro</h3>
+<input id="nombre" placeholder="Nombre">
+<input id="tel2" placeholder="Teléfono">
+<input id="email" placeholder="Email">
+<button onclick="registrar()">Registrar</button>
 
-<button class="blue" onclick="location.href='admin.html'">
-Administración
+<h3>📦 Suscripción</h3>
+<input id="cliente_id" placeholder="ID cliente">
+<select id="tipo">
+  <option value="mensual">Mensual</option>
+  <option value="anual">Anual</option>
+</select>
+<input id="fecha" type="date">
+<button onclick="suscribir()">Activar / Renovar</button>
+
+<h3>❌ Cancelar</h3>
+<input id="sub_id" placeholder="ID suscripción">
+<button onclick="cancelar()">Cancelar</button>
+
+<br><br>
+
+<button class="admin-btn" onclick="window.location='/admin.html'">
+Área Administrativa
 </button>
 
+</div>
+
 <script>
+async function registrar(){
+  await fetch('/api/clientes',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      nombre: nombre.value,
+      telefono: tel2.value,
+      email: email.value
+    })
+  });
+  alert("Registrado");
+}
+
+async function buscar(){
+  let r = await fetch('/api/clientes/'+telefono.value);
+  let d = await r.json();
+  alert(JSON.stringify(d));
+}
+
+async function suscribir(){
+  await fetch('/api/suscripciones',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      cliente_id: cliente_id.value,
+      tipo: tipo.value,
+      fecha_fin: fecha.value
+    })
+  });
+  alert("Suscripción activa");
+}
+
 async function cancelar(){
-  const id=document.getElementById('id').value;
-
-  const r=await fetch('/cancelar/'+id,{method:'PUT'});
-
-  document.getElementById('msg').innerText='Cancelado';
+  await fetch('/api/cancelar',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ id: sub_id.value })
+  });
+  alert("Cancelado");
 }
 </script>
 
