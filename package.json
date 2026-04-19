@@ -1,17 +1,14 @@
 {
   "name": "vitalitycenter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Sistema de gimnasio con PostgreSQL",
   "main": "VitalityCenter.js",
   "scripts": {
     "start": "node VitalityCenter.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1",
+    "express-session": "^1.18.0",
     "pg": "^8.20.0"
   }
 }
