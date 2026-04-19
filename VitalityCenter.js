@@ -8,6 +8,10 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+  res.send('Servidor funcionando');
+});
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:root@localhost:5432/VitalityCenter',
   ssl: process.env.DATABASE_URL
